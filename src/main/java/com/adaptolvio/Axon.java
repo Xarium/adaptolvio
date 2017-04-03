@@ -10,9 +10,9 @@ public class Axon {
     /** The recipients of the transiting signal. */
     private Neuron neuron;
 
-    public Axon(int genePosition, float weight, Neuron neuron) {
+    public Axon(int genePosition, Neuron neuron, float weight) {
         this.genePosition = genePosition;
-        this.weight = weight;
         this.neuron = neuron;
+        this.weight = weight;
     }
 }

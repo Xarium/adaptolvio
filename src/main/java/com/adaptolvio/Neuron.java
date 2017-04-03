@@ -11,13 +11,13 @@ public abstract class Neuron {
     public String gene;
 
     /**  */
-    protected float input;
+    protected double input;
 
     /**  */
-    public float value;
+    public double value;
 
     /** Outbound axons. */
-    public List<Axon> axons = new ArrayList<Axon>();;
+    public List<Axon> axons = new ArrayList<Axon>();
 
     /**  */
     protected int read;
@@ -27,16 +27,30 @@ public abstract class Neuron {
 
     public Neuron(String gene) {
         this.gene = gene;
-        String weightString = gene.substring(0, 3);
+    }
 
-        int i = 3;
-        while(i < gene.length()) {
-            this.addAxon(i, gene.substring(i, i + 3));
+    /**
+     * All the Neurons have to be initialized, otherwise the axons could be unable to link to them.
+     */
+    public void initializeAxons(Brain brain) {
+        int startAt = 1;
+        while(startAt < this.gene.length()) {
+            this.addAxon(startAt, this.gene.substring(startAt, startAt + 6), brain);
+            startAt += 6;
         }
     }
 
-    private void addAxon(int i, String substring) {
-        // Parse the string to an Axon object.
+    private void addAxon(int genePosition, String axonGene, Brain brain) {
+        int destinationIndex = Integer.parseInt(axonGene.substring(0, 2), 16);
+        Neuron destination = brain.getNeuronByIndex(destinationIndex);
+        if (destination == null) {
+            // The Neuron does not exists.
+            //  NB: "this.initializeAxons()" have to be executed before of this.
+            return;
+        }
+        float weight = (Integer.parseInt(axonGene.substring(2, 6), 16) - 32768) / 256;  // [16^2; -16^2]
+
+        this.axons.add(new Axon(genePosition, destination, weight));
     }
 
     public void addRead(boolean $allow) {
@@ -51,7 +65,7 @@ public abstract class Neuron {
 
     }
 
-    protected abstract float getActivationFunctionResult();
+    protected abstract double getActivationFunctionResult();
 
     public void applyActivationFunction() {
         this.value = this.getActivationFunctionResult();
@@ -65,11 +79,15 @@ public abstract class Neuron {
      */
     public static Neuron decodeFromString(String gene) {
 
+        Neuron n;
         switch (gene.charAt(0)) {
             case '1':
-                return new HardLimitNeuron(gene);
+                n = new HardLimitNeuron(gene);
+                break;
             default:
-                return null;
+                n = null;
+                break;
         }
+        return n;
     }
 }
