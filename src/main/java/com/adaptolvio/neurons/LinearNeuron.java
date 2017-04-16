@@ -1,5 +1,6 @@
 package com.adaptolvio.neurons;
 
+import com.adaptolvio.Axon;
 import com.adaptolvio.Neuron;
 
 public class LinearNeuron extends Neuron {
@@ -7,8 +8,15 @@ public class LinearNeuron extends Neuron {
         super(gene);
     }
 
-    @Override
-    protected double getActivationFunctionResult() {
+    public double activationFunction() {
         return this.input;
+    }
+
+    @Override
+    protected void sendSignal() {
+        double value = this.activationFunction();
+        for (Axon axon: this.axons) {
+            axon.neuron.addInput(value);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package com.adaptolvio;
 
 
-import com.adaptolvio.neurons.HardLimitNeuron;
+import com.adaptolvio.neurons.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,16 +11,16 @@ public abstract class Neuron {
     public String gene;
 
     /**  */
-    protected double input;
-
-    /**  */
-    public double value;
+    public double input;
 
     /** Outbound axons. */
     public List<Axon> axons = new ArrayList<Axon>();
 
     /**  */
-    protected int read;
+    public double read;
+
+    /**  */
+    public double inputRead;
 
     /**  */
     protected int write;
@@ -34,7 +34,7 @@ public abstract class Neuron {
      */
     public void initializeAxons(Brain brain) {
         int startAt = 1;
-        while(startAt < this.gene.length()) {
+        while(startAt < this.gene.length()-1) {
             this.addAxon(startAt, this.gene.substring(startAt, startAt + 6), brain);
             startAt += 6;
         }
@@ -42,7 +42,7 @@ public abstract class Neuron {
 
     private void addAxon(int genePosition, String axonGene, Brain brain) {
         int destinationIndex = Integer.parseInt(axonGene.substring(0, 2), 16);
-        Neuron destination = brain.getNeuronByIndex(destinationIndex);
+        Neuron destination = brain.getNeuron(destinationIndex);
         if (destination == null) {
             // The Neuron does not exists.
             //  NB: "this.initializeAxons()" have to be executed before of this.
@@ -53,23 +53,52 @@ public abstract class Neuron {
         this.axons.add(new Axon(genePosition, destination, weight));
     }
 
-    public void addRead(boolean $allow) {
-
+    /**
+     *
+     * @param allow Allowed values: +1 or -1
+     */
+    public void addRead(double allow) {
+        System.out.println(this.getClass().getCanonicalName() + " read " + allow);
+        this.inputRead += allow;
     }
 
-    public void addWrite(boolean $allow) {
-
+    /**
+     *
+     * @param allow Allowed values: +1 or -1
+     */
+    public void addWrite(int allow) {
+        System.out.println(this.getClass().getCanonicalName() + " write " + allow);
+        this.write += allow;
     }
 
-    public void addValue(boolean $allow) {
-
+    /**
+     * Accept new values on input only if the Neuron isn't blocked on reading
+     * @param input
+     */
+    public void addInput(double input) {
+        if (this.read >= 0) {
+            System.out.println(this.getClass().getCanonicalName() + " input " + input);
+            this.input += input;
+        }
     }
 
-    protected abstract double getActivationFunctionResult();
+    protected abstract void sendSignal();
 
-    public void applyActivationFunction() {
-        this.value = this.getActivationFunctionResult();
-        this.input = 0;
+    public void propagate() {
+        // Invia il segnale solo se non è attivo il blocco di propagazione della memoria
+        if (this.write >= 0) {
+            this.sendSignal();
+        }
+
+        this.read = this.inputRead;
+        this.inputRead = 0;
+
+        // resetta la lettura solo se non deve mantenere in memoria il valore
+        if (this.read >= 0) {
+            System.out.println("adfgdfgafgsrgsgsfdgdsfgsfdgs");
+            this.input = 0;
+        }
+        this.write = 0;
     }
 
     /**
@@ -83,6 +112,18 @@ public abstract class Neuron {
         switch (gene.charAt(0)) {
             case '1':
                 n = new HardLimitNeuron(gene);
+                break;
+            case '2':
+                n = new LinearNeuron(gene);
+                break;
+            case '3':
+                n = new SinNeuron(gene);
+                break;
+            case '4':
+                n = new ReadNeuron(gene);
+                break;
+            case '5':
+                n = new WriteNeuron(gene);
                 break;
             default:
                 n = null;
